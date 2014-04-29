@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/go-martini/martini"
 	"labix.org/v2/mgo"
 	"time"
 )
@@ -11,25 +12,33 @@ const (
 )
 
 func main() {
-	session, err := mgo.Dial(db)
-	if err != nil {
-		panic(err)
-	}
-	defer session.Close()
-	c := session.DB("").C("meter")
-	meter := new(Veris)
-	for _ := range time.Tick(5 * time.Second) {
-		v, err := meter.Read()
+	// poll data
+	go func() {
+		session, err := mgo.Dial(db)
 		if err != nil {
-			fmt.Println(err)
-			return
+			panic(err)
 		}
-		err = c.Insert(v)
-		if err != nil {
-			fmt.Println(err)
-			return
+		defer session.Close()
+		c := session.DB("").C("meter")
+		meter := new(Veris)
+		for _ = range time.Tick(5 * time.Second) {
+			v, err := meter.Read()
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			err = c.Insert(v)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			//v.Print()
 		}
-		v.Print()
-	}
-
+	}()
+	// server
+	m := martini.Classic()
+	m.Get("/", func() string {
+		return "Hello world!"
+	})
+	m.Run()
 }
