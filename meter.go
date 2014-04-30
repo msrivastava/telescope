@@ -22,10 +22,9 @@ type Meter interface {
 }
 
 const (
-	Addr       = "128.97.93.90:4660"
-	PowerReg   = 2084
-	CurrentReg = 2252
-	RegNum     = 42
+	Addr       = "meter2518-1.seas.ucla.edu:4660"
+	PowerReg   = 1000
+	RegNum     = 27
 )
 
 type VerisValue struct {

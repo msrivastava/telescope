@@ -25,14 +25,14 @@ func main() {
 			v, err := meter.Read()
 			if err != nil {
 				fmt.Println(err)
-				return
+				continue
 			}
 			err = c.Insert(v)
 			if err != nil {
 				fmt.Println(err)
-				return
+				continue
 			}
-			//v.Print()
+			v.Print()
 		}
 	}()
 	// server
