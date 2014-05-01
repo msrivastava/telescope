@@ -11,7 +11,7 @@
 <script>
 var context= cubism.context()
     .serverDelay(60 * 1000)
-    .step(1000)
+    .step(5 * 1000)
     .size(1440),
     primary = energy(),
     secondary = primary.shift(- 24 * 60 * 60 * 1000);
