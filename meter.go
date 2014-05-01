@@ -22,35 +22,35 @@ type Meter interface {
 }
 
 const (
-	Addr       = "meter2518-1.seas.ucla.edu:4660"
-	PowerReg   = 1000
-	RegNum     = 27
+	Addr     = "meter2518-1.seas.ucla.edu:4660"
+	PowerReg = 1000
+	RegNum   = 27
 )
 
-type VerisValue struct {
-	V []float64
-	T time.Time
+type EatonValue struct {
+	V []float64 `json:"v"`
+	T time.Time `json:"t"`
 }
 
-func (this *VerisValue) Unit() string {
+func (this *EatonValue) Unit() string {
 	return "kW"
 }
 
-func (this *VerisValue) Values() []float64 {
+func (this *EatonValue) Values() []float64 {
 	return this.V
 }
 
-func (this *VerisValue) Time() time.Time {
+func (this *EatonValue) Time() time.Time {
 	return this.T
 }
 
-func (this *VerisValue) Print() {
+func (this *EatonValue) Print() {
 	spew.Dump(*this)
 }
 
-type Veris struct{}
+type Eaton struct{}
 
-func (this *Veris) Read() (value MeterValue, err error) {
+func (this *Eaton) Read() (value MeterValue, err error) {
 	conn, err := net.Dial("tcp", Addr)
 	if err != nil {
 		return
@@ -80,7 +80,7 @@ func (this *Veris) Read() (value MeterValue, err error) {
 		err = errors.New("bad reg num")
 		return
 	}
-	v := new(VerisValue)
+	v := new(EatonValue)
 	v.T = time.Now()
 	for i := 0; i < RegNum; i++ {
 		var f float32
