@@ -46,7 +46,7 @@ func main() {
 				fmt.Println(err)
 				continue
 			}
-			v.Print()
+			//v.Print()
 		}
 	}()
 
@@ -67,6 +67,7 @@ func main() {
 		var results []EatonValue
 		err = c.Find(bson.M{"t": bson.M{"$lte": time.Unix(t2, 0), "$gt": time.Unix(t1, 0)}}).Sort("t").All(&results)
 		if err != nil {
+			fmt.Println(err)
 			return
 		}
 		b, err := json.Marshal(results)
