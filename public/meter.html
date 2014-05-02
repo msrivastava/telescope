@@ -1,88 +1,67 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Boelter Smart Meter</title>
-	<script src="d3.v2.js"></script>
-	<script src="cubism.v1.js"></script>
-	<link href='style.css' rel='stylesheet' />
+    <title>Boelter Smart Meter</title>
+    <script src="d3.v2.js"></script>
+    <script src="cubism.v1.js"></script>
+    <link href="style.css" rel="stylesheet" />
 </head>
 <body>
-<div id='chart'></div>
-<script>
-var context= cubism.context()
-    .serverDelay(60 * 1000)
-    .step(5 * 1000)
-    .size(1440),
-    primary = energy(),
-    secondary = primary.shift(- 24 * 60 * 60 * 1000);
-
-
-d3.select("#chart").call(function(div) {
-    div.append("div")
-      .attr("class", "axis")
-      .call(context.axis().orient("top"));
-    
-    div.selectAll(".horizon")
-      .data([primary])
-      .enter().append("div")
-      .attr("class", "horizon")
-      .call(context.horizon()
-        .height(400)
-        .format(d3.format(".2f"))
-        .title("Energy"));
-
-    div.selectAll(".comparison")
-      .data([[primary, secondary]])
-      .enter().append("div")
-      .attr("class", "comparison")
-      .call(context.comparison()
-        .height(200)
-        .formatChange(d3.format(".1f%"))
-        .title("Daily Change"));
-
-    div.append("div")
-      .attr("class", "rule")
-      .call(context.rule());
-});
-
-context.on("focus", function(i) {
-    format = d3.format(".1f");
-    d3.selectAll(".horizon .value").style("right", i === null ? null : context.size() - i + "px")
-      .text(format(primary.valueAt(Math.floor(i))) + " W");
-});
-
-function computePower(p) {
-	return Math.abs(p.v[10])
-}
-
-// Replace this with context.graphite and graphite.metric!
-function energy() {
-  return context.metric(function(start, stop, step, callback) {
-  	var req = "/" + start.getTime()/1000 + "/" + stop.getTime()/1000;
-  	d3.json(req, function(data) {
-  		if(!data) return callback(new Error("unable to load data"));
-  		var values = [];
-  		var j = 0;
-    	for (var i = +start; i < +stop; i+= step) {
-    		if (j >= data.length) {
-    			values.push(0)
-    			continue
-    		}
-    		var t = +Date.parse(data[j].t)
-    		if (i <= t && t < i + step) {
-    			values.push(computePower(data[j]));
-    		} else {
-    			values.push(0)
-    		}
-    		if (t < i + step) {
-    			j++
-    		}
-    	}
-    	console.log(values)
-    	callback(null, values);
-	});
-  });
-}
-</script>
+    <div id="chart"></div>
+    <script>
+        var context = cubism.context().serverDelay(60 * 1e3).step(5 * 1e3).size(1440), primary = energy(), secondary = primary.shift(-24 * 60 * 60 * 1e3);
+        
+        d3.select("#chart").call(function(div) {
+            div.append("div").attr("class", "axis").call(context.axis().orient("top"));
+            div.selectAll(".horizon").data([ primary ]).enter().append("div").attr("class", "horizon").call(context.horizon().height(400).format(d3.format(".2f")).title("Energy"));
+            div.selectAll(".comparison").data([ [ primary, secondary ] ]).enter().append("div").attr("class", "comparison").call(context.comparison().height(200).formatChange(d3.format(".1f%")).title("Daily Change"));
+            div.append("div").attr("class", "rule").call(context.rule());
+        });
+        
+        context.on("focus", function(i) {
+            format = d3.format(".1f");
+            d3.selectAll(".horizon .value").style("right", i === null ? null : context.size() - i + "px").text(format(primary.valueAt(Math.floor(i))) + " W");
+        });
+        
+        function computePower(p) {
+            return Math.abs(p.v[10]);
+        }
+        
+        function nonzero(l) {
+            var count = 0;
+            for (var i = 0; i < l.length; i++) {
+                if (l[i] != 0) count++;
+            }
+            return count;
+        }
+        
+        function energy() {
+            return context.metric(function(start, stop, step, callback) {
+                var req = "/" + start.getTime() / 1e3 + "/" + stop.getTime() / 1e3;
+                d3.json(req, function(data) {
+                    if (!data) return callback(new Error("unable to load data"));
+                    var values = [];
+                    var j = 0;
+                    for (var i = +start; i < +stop; i += step) {
+                        while (j < data.length && +Date.parse(data[j].t) < i) {
+                            j++;
+                        }
+                        if (j >= data.length) {
+                            values.push(0);
+                            continue;
+                        }
+                        var t = +Date.parse(data[j].t);
+                        if (i <= t && t < i + step) {
+                            values.push(computePower(data[j]));
+                        } else {
+                            values.push(0);
+                        }
+                    }
+                    console.log(nonzero(values), data.length);
+                    callback(null, values);
+                });
+            });
+        }
+    </script>
 </body>
 </html>
