@@ -52,7 +52,7 @@ context.on("focus", function(i) {
 });
 
 function computePower(p) {
-	return Math.abs(p.v[0] * p.v[7]) + Math.abs(p.v[1] * p.v[8]) + Math.abs(p.v[2] * p.v[9])
+	return Math.abs(p.v[10])
 }
 
 // Replace this with context.graphite and graphite.metric!
@@ -61,19 +61,24 @@ function energy() {
   	var req = "/" + start.getTime()/1000 + "/" + stop.getTime()/1000;
   	d3.json(req, function(data) {
   		if(!data) return callback(new Error("unable to load data"));
-  		console.log(req);
   		var values = [];
   		var j = 0;
-    	for (var i = start; i < stop; i+= step) {
-    		while (j < data.length - 1 && i > data[j].t) {
+    	for (var i = +start; i < +stop; i+= step) {
+    		if (j >= data.length) {
+    			values.push(0)
+    			continue
+    		}
+    		var t = +Date.parse(data[j].t)
+    		if (i <= t && t < i + step) {
+    			values.push(computePower(data[j]));
+    		} else {
+    			values.push(0)
+    		}
+    		if (t < i + step) {
     			j++
     		}
-    		if (data.length == 0) {
-    			values.push(0)
-    		} else {
-    			values.push(computePower(data[j]))
-    		}
     	}
+    	console.log(values)
     	callback(null, values);
 	});
   });
