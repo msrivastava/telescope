@@ -48,7 +48,7 @@ d3.select("#chart").call(function(div) {
 context.on("focus", function(i) {
     format = d3.format(".1f");
     d3.selectAll(".horizon .value").style("right", i === null ? null : context.size() - i + "px")
-      .text(format(primary.valueAt(Math.floor(i))) + "W");
+      .text(format(primary.valueAt(Math.floor(i))) + " W");
 });
 
 function computePower(p) {
@@ -63,10 +63,18 @@ function energy() {
   		if(!data) return callback(new Error("unable to load data"));
   		console.log(req);
   		var values = [];
-    	for (var i in data) {
-    		values.push(computePower(data[i]))
+  		var j = 0;
+    	for (var i = start; i < stop; i+= step) {
+    		while (j < data.length - 1 && i > data[j].t) {
+    			j++
+    		}
+    		if (data.length == 0) {
+    			values.push(0)
+    		} else {
+    			values.push(computePower(data[j]))
+    		}
     	}
-    	callback(null,  values);
+    	callback(null, values);
 	});
   });
 }
