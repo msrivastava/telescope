@@ -43,19 +43,21 @@
                     if (!data) return callback(new Error("unable to load data"));
                     var values = [];
                     var j = 0;
+                    var value = 0;
                     for (var i = +start; i < +stop; i += step) {
                         while (j < data.length && +Date.parse(data[j].t) < i) {
                             j++;
                         }
                         if (j >= data.length) {
-                            values.push(0);
+                            values.push(value);
                             continue;
                         }
                         var t = +Date.parse(data[j].t);
                         if (i <= t && t < i + step) {
-                            values.push(computePower(data[j]));
+                            value = computePower(data[j])
+                            values.push(value);
                         } else {
-                            values.push(0);
+                            values.push(value);
                         }
                     }
                     console.log(nonzero(values), data.length);
