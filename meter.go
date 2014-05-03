@@ -22,7 +22,7 @@ type Meter interface {
 }
 
 const (
-	Addr     = "meter2518-1.seas.ucla.edu:4661"
+	Addr     = "128.97.93.90:4661"
 	PowerReg = 1000
 	RegNum   = 27
 )
