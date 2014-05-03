@@ -10,7 +10,7 @@
 <body>
     <div id="chart"></div>
     <script>
-        var context = cubism.context().serverDelay(60 * 1e3).step(5 * 1e3).size(1440), primary = energy(), secondary = primary.shift(-24 * 60 * 60 * 1e3);
+        var context = cubism.context().serverDelay(5 * 1e3).step(5 * 1e3).size(1440), primary = energy(), secondary = primary.shift(-24 * 60 * 60 * 1e3);
         
         d3.select("#chart").call(function(div) {
             div.append("div").attr("class", "axis").call(context.axis().orient("top"));
