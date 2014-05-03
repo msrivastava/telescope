@@ -35,9 +35,9 @@
             }
             return count;
         }
-        
-        var value = NaN;
+
         function energy() {
+            var v = NaN;
             return context.metric(function(start, stop, step, callback) {
                 var req = "/" + start.getTime() / 1e3 + "/" + stop.getTime() / 1e3;
                 d3.json(req, function(data) {
@@ -49,14 +49,14 @@
                             j++;
                         }
                         if (j >= data.length) {
-                            values.push(value);
+                            values.push(v);
                             continue;
                         }
                         var t = +Date.parse(data[j].t);
                         if (i <= t && t < i + step) {
-                            value = computePower(data[j]);
+                            v = computePower(data[j]);
                         }
-                        values.push(value);
+                        values.push(v);
                     }
                     console.log(nonzero(values), data.length);
                     callback(null, values);
