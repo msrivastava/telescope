@@ -36,8 +36,8 @@
             return count;
         }
         
+        var value = NaN;
         function energy() {
-            var value = 0;
             return context.metric(function(start, stop, step, callback) {
                 var req = "/" + start.getTime() / 1e3 + "/" + stop.getTime() / 1e3;
                 d3.json(req, function(data) {
