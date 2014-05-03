@@ -37,13 +37,13 @@
         }
 
         function energy() {
+            var v = NaN;
             return context.metric(function(start, stop, step, callback) {
                 var req = "/" + start.getTime() / 1e3 + "/" + stop.getTime() / 1e3;
                 d3.json(req, function(data) {
                     if (!data) return callback(new Error("unable to load data"));
                     var values = [];
                     var j = 0;
-                    var v = NaN;
                     for (var i = +start; i < +stop; i += step) {
                         while (j < data.length && +Date.parse(data[j].t) < i) {
                             j++;
