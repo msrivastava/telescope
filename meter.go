@@ -4,25 +4,13 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	//"fmt"
+	"fmt"
 	"github.com/davecgh/go-spew/spew"
 	"net"
 	"time"
 )
 
-type MeterValue interface {
-	Time() time.Time
-	Unit() string
-	Values() []float64
-	Print()
-}
-
-type Meter interface {
-	Read() (MeterValue, error)
-}
-
 const (
-	Addr     = "128.97.93.90:4661"
 	PowerReg = 1000
 	RegNum   = 27
 )
@@ -48,10 +36,12 @@ func (this *EatonValue) Print() {
 	spew.Dump(*this)
 }
 
-type Eaton struct{}
+type Eaton struct {
+	Addr string
+}
 
-func (this *Eaton) Read() (value MeterValue, err error) {
-	conn, err := net.Dial("tcp", Addr)
+func (this *Eaton) Read() (value EatonValue, err error) {
+	conn, err := net.Dial("tcp", this.Addr)
 	if err != nil {
 		return
 	}
@@ -72,22 +62,20 @@ func (this *Eaton) Read() (value MeterValue, err error) {
 	binary.Read(conn, binary.BigEndian, &b) //addr
 	binary.Read(conn, binary.BigEndian, &b) //func
 	if b != 0x3 {
-		err = errors.New("bad response")
+		err = errors.New(fmt.Sprintf("expected %v but got %v", 0x3, b))
 		return
 	}
 	binary.Read(conn, binary.BigEndian, &b) //length
 	if b != RegNum*4 {
-		err = errors.New("bad reg num")
+		err = errors.New(fmt.Sprintf("expected %v but got %v", RegNum*4, b))
 		return
 	}
-	v := new(EatonValue)
-	v.T = time.Now()
+	value.T = time.Now()
 	for i := 0; i < RegNum; i++ {
 		var f float32
 		binary.Read(conn, binary.BigEndian, &f)
-		v.V = append(v.V, float64(f))
+		value.V = append(value.V, float64(f))
 	}
 	// ignore crc16
-	value = v
 	return
 }
