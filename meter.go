@@ -62,12 +62,12 @@ func (this *Eaton) Read() (value EatonValue, err error) {
 	binary.Read(conn, binary.BigEndian, &b) //addr
 	binary.Read(conn, binary.BigEndian, &b) //func
 	if b != 0x3 {
-		err = errors.New(fmt.Sprintf("expected %v but got %v", 0x3, b))
+		err = errors.New(fmt.Sprintf("[%v] expected %v but got %v", this.Addr, 0x3, b))
 		return
 	}
 	binary.Read(conn, binary.BigEndian, &b) //length
 	if b != RegNum*4 {
-		err = errors.New(fmt.Sprintf("expected %v but got %v", RegNum*4, b))
+		err = errors.New(fmt.Sprintf("[%v] expected %v but got %v", this.Addr, RegNum*4, b))
 		return
 	}
 	value.T = time.Now()

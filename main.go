@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	db   = "mongodb://demo:demo@oceanic.mongohq.com:10074/telescope"
+	db = "mongodb://demo:demo@oceanic.mongohq.com:10074/telescope"
 )
 
 var (
@@ -33,17 +33,15 @@ func main() {
 	for id, addr := range Addr {
 		go func(idS, addr string) {
 			c := session.DB("").C("meter" + idS)
-			err = c.EnsureIndex(mgo.Index{
+			c.EnsureIndex(mgo.Index{
 				Key:        []string{"t"},
 				Unique:     true,
 				DropDups:   true,
 				Background: true,
 				Sparse:     true,
 			})
-			if err != nil {
-				panic(err)
-			}
 			meter := Eaton{Addr: addr}
+			fmt.Printf("start meter %v\n", addr)
 			for _ = range time.Tick(5 * time.Second) {
 				v, err := meter.Read()
 				if err != nil {
@@ -64,28 +62,17 @@ func main() {
 	m.Get("/", func() string {
 		return fmt.Sprintf("/%d/%d", time.Now().Add(-time.Minute).Unix(), time.Now().Unix())
 	})
-	m.Get("/:meter/:t1/:t2", func(params martini.Params) (s string) {
-		t1, err := strconv.ParseInt(params["t1"], 10, 64)
-		if err != nil {
-			return
-		}
-		t2, err := strconv.ParseInt(params["t2"], 10, 64)
-		if err != nil {
-			return
-		}
+	m.Get("/:meter/:t1/:t2", func(params martini.Params) string {
+		t1, _ := strconv.ParseInt(params["t1"], 10, 64)
+		t2, _ := strconv.ParseInt(params["t2"], 10, 64)
 		c := session.DB("").C(params["meter"])
 		var results []EatonValue
-		err = c.Find(bson.M{"t": bson.M{"$lte": time.Unix(t2, 0), "$gt": time.Unix(t1, 0)}}).Sort("t").All(&results)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		c.Find(bson.M{"t": bson.M{"$lte": time.Unix(t2, 0), "$gt": time.Unix(t1, 0)}}).Sort("t").All(&results)
 		b, err := json.Marshal(results)
 		if err != nil {
-			return
+			return "null"
 		}
-		s = string(b)
-		return
+		return string(b)
 	})
 	m.Run()
 }
