@@ -4,7 +4,7 @@
     <title>Boelter Smart Meter</title>
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.min.js"></script>
-    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" />
     <script src="https://rawgithub.com/square/cubism/master/cubism.v1.min.js"></script>
     <link rel="shortcut icon" href="favicon.ico" />
     <link href="style.css" rel="stylesheet" />
@@ -14,21 +14,30 @@
     <div class="row" ng-controller="meterController">
         <div class="col-md-2">
             <h1 style="margin: 10px;">
-            <span style="color: green;">B</span>oelter<br/>Smart<br/>Meter
+                <span style="color: green;">B</span>
+                oelter
+                <br />
+                Smart
+                <br />
+                Meter
             </h1>
             <ul class="list-group" style="margin: 0 10px; overflow-x: hidden;">
-              <li class="list-group-item" style="cursor:pointer" ng-repeat="meter in meters" ng-class="{'active': isActiveMeter(meter) }" ng-click="setActiveMeter(meter)">
+                <li class="list-group-item" style="cursor:pointer" ng-repeat="meter in meters" ng-class="{'active': isActiveMeter(meter) }" ng-click="setActiveMeter(meter)">
                     <h4 class="list-group-item-heading">{{ meter.name }}</h4>
                     <p class="list-group-item-text">{{ meter.addr }}</p>
-              </li>
+                </li>
             </ul>
             <p style="color: #777; font-size: small; margin: 10px;">
-                Built by <i>Tai-Lin Chu</i> with Help of <i>Bo Peng, Mani Srivastava</i> and <i>Kevin Ting</i>.
+                Built by
+                <i>Tai-Lin Chu</i>
+                with Help of
+                <i>Bo Peng, Mani Srivastava</i>
+                and
+                <i>Kevin Ting</i>
+                .
             </p>
         </div>
-        <div class="col-md-2">
-        </div>
-
+        <div class="col-md-2"></div>
         <div class="col-md-8">
             <div id="chart"></div>
         </div>

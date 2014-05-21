@@ -94,7 +94,12 @@ func main() {
 		stop, _ := strconv.ParseInt(params["stop"], 10, 64)
 		c := session.DB("").C(params["meter"])
 		var results []EatonValue
-		err := c.Find(bson.M{"t": bson.M{"$lt": time.Unix(stop, 0), "$gte": time.Unix(start, 0)}}).Sort("t").All(&results)
+		err := c.Find(bson.M{
+			"t": bson.M{
+				"$lt":  time.Unix(stop, 0),
+				"$gte": time.Unix(start, 0),
+			},
+		}).Sort("t").All(&results)
 		if err != nil {
 			return http.StatusBadRequest, ""
 		}
