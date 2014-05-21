@@ -1,71 +1,37 @@
 <!DOCTYPE html>
-<html>
+<html ng-app="telescope">
 <head>
     <title>Boelter Smart Meter</title>
-    <script src="d3.v2.js"></script>
-    <script src="cubism.v1.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.min.js"></script>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+    <script src="https://rawgithub.com/square/cubism/master/cubism.v1.min.js"></script>
     <link rel="shortcut icon" href="favicon.ico" />
     <link href="style.css" rel="stylesheet" />
+    <script src="app.js"></script>
 </head>
 <body>
-    <div id="chart"></div>
-    <script>
-        var context = cubism.context().serverDelay(5 * 1e3).step(5 * 1e3).size(1440), primary = energy(), secondary = primary.shift(-24 * 60 * 60 * 1e3);
-        
-        d3.select("#chart").call(function(div) {
-            div.append("div").attr("class", "axis").call(context.axis().orient("top"));
-            div.selectAll(".horizon").data([ primary ]).enter().append("div").attr("class", "horizon").call(context.horizon().height(400).format(d3.format(".2f")).title("Energy"));
-            div.selectAll(".comparison").data([ [ primary, secondary ] ]).enter().append("div").attr("class", "comparison").call(context.comparison().height(200).formatChange(d3.format(".1f%")).title("Daily Change"));
-            div.append("div").attr("class", "rule").call(context.rule());
-        });
-        
-        context.on("focus", function(i) {
-            format = d3.format(".1f");
-            d3.selectAll(".horizon .value").style("right", i === null ? null : context.size() - i + "px").text(format(primary.valueAt(Math.floor(i))) + " W");
-        });
-        
-        function computePower(p) {
-            return Math.abs(p.v[9]);
-        }
-        
-        function nonzero(l) {
-            var count = 0;
-            for (var i = 0; i < l.length; i++) {
-                if (l[i] != 0) count++;
-            }
-            return count;
-        }
+    <div class="row" ng-controller="meterController">
+        <div class="col-md-2">
+            <h1 style="margin: 10px;">
+            <span style="color: green;">B</span>oelter<br/>Smart<br/>Meter
+            </h1>
+            <ul class="list-group" style="margin: 0 10px;">
+              <li class="list-group-item" style="cursor:pointer" ng-repeat="meter in meters" ng-class="{'active': isActiveMeter(meter) }" ng-click="setActiveMeter(meter)">
+                    <h4 class="list-group-item-heading">{{ meter.name }}</h4>
+                    <p class="list-group-item-text">{{ meter.addr }}</p>
+              </li>
+            </ul>
+            <p style="color: #777; font-size: small; margin: 10px;">
+                Built by <i>Tai-Lin Chu</i> with Help of <i>Bo Peng, Mani Srivastava</i> and <i>Kevin Ting</i>.
+            </p>
+        </div>
+        <div class="col-md-2">
+        </div>
 
-        function energy() {
-            var v = NaN;
-            return context.metric(function(start, stop, step, callback) {
-                var req = "/meter2/" + start.getTime() / 1e3 + "/" + stop.getTime() / 1e3;
-                d3.json(req, function(data) {
-                    if (!data) return callback(new Error("unable to load data"));
-                    var values = [];
-                    var j = 0;
-                    for (var i = +start; i < +stop; i += step) {
-                        while (j < data.length && +Date.parse(data[j].t) < i) {
-                            j++;
-                        }
-                        if (j >= data.length) {
-                            values.push(v);
-                            continue;
-                        }
-                        var t = +Date.parse(data[j].t);
-                        if (i <= t && t < i + step) {
-                            var read = computePower(data[j]);
-                            if (read != 0) {
-                                v = read
-                            }
-                        }
-                        values.push(v);
-                    }
-                    console.log(nonzero(values), data, values);
-                    callback(null, values);
-                });
-            });
-        }
-    </script>
+        <div class="col-md-8">
+            <div id="chart"></div>
+        </div>
+    </div>
 </body>
 </html>

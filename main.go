@@ -6,7 +6,9 @@ import (
 	"github.com/go-martini/martini"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
+	"net/http"
 	"strconv"
+	//"strings"
 	"time"
 )
 
@@ -14,13 +16,35 @@ const (
 	db = "mongodb://demo:demo@oceanic.mongohq.com:10074/telescope"
 )
 
+type MeterInfo struct {
+	Name string `json:"name"`
+	Addr string `json:"addr"`
+}
+
 var (
-	Addr = []string{
-		"128.97.93.90:4661",
-		"128.97.93.90:4662",
-		"128.97.93.90:4663",
+	Meters = []MeterInfo{
+		{
+			Name: "meter0",
+			Addr: "128.97.11.100:4660",
+		},
+		{
+			Name: "meter1",
+			Addr: "128.97.11.101:4660",
+		},
+		{
+			Name: "meter2",
+			Addr: "128.97.11.102:4660",
+		},
 	}
 )
+
+func MustEncode(data interface{}) string {
+	b, err := json.Marshal(data)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
 
 func main() {
 	session, err := mgo.Dial(db)
@@ -30,9 +54,9 @@ func main() {
 	defer session.Close()
 
 	// poll data
-	for id, addr := range Addr {
-		go func(idS, addr string) {
-			c := session.DB("").C("meter" + idS)
+	for _, meter := range Meters {
+		go func(m MeterInfo) {
+			c := session.DB("").C(m.Name)
 			c.EnsureIndex(mgo.Index{
 				Key:        []string{"t"},
 				Unique:     true,
@@ -40,8 +64,8 @@ func main() {
 				Background: true,
 				Sparse:     true,
 			})
-			meter := Eaton{Addr: addr}
-			fmt.Printf("start meter %v\n", addr)
+			meter := Eaton{Addr: m.Addr}
+			fmt.Printf("start meter %v\n", m.Addr)
 			for _ = range time.Tick(5 * time.Second) {
 				v, err := meter.Read()
 				if err != nil {
@@ -54,25 +78,32 @@ func main() {
 					continue
 				}
 			}
-		}(strconv.Itoa(id), addr)
+		}(meter)
 	}
 
 	// server
 	m := martini.Classic()
+	m.Use(martini.Recovery())
+
 	m.Get("/", func() string {
 		return fmt.Sprintf("/%d/%d", time.Now().Add(-time.Minute).Unix(), time.Now().Unix())
 	})
-	m.Get("/:meter/:t1/:t2", func(params martini.Params) string {
-		t1, _ := strconv.ParseInt(params["t1"], 10, 64)
-		t2, _ := strconv.ParseInt(params["t2"], 10, 64)
+
+	m.Get("/:meter/:start/:stop", func(params martini.Params) (int, string) {
+		start, _ := strconv.ParseInt(params["start"], 10, 64)
+		stop, _ := strconv.ParseInt(params["stop"], 10, 64)
 		c := session.DB("").C(params["meter"])
 		var results []EatonValue
-		c.Find(bson.M{"t": bson.M{"$lte": time.Unix(t2, 0), "$gt": time.Unix(t1, 0)}}).Sort("t").All(&results)
-		b, err := json.Marshal(results)
+		err := c.Find(bson.M{"t": bson.M{"$lt": time.Unix(stop, 0), "$gte": time.Unix(start, 0)}}).Sort("t").All(&results)
 		if err != nil {
-			return "null"
+			return http.StatusBadRequest, ""
 		}
-		return string(b)
+		return http.StatusOK, MustEncode(results)
 	})
+
+	m.Get("/list", func() (int, string) {
+		return http.StatusOK, MustEncode(Meters)
+	})
+
 	m.Run()
 }

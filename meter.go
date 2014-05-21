@@ -20,20 +20,20 @@ type EatonValue struct {
 	T time.Time `json:"t"`
 }
 
-func (this *EatonValue) Unit() string {
+func (this EatonValue) Unit() string {
 	return "kW"
 }
 
-func (this *EatonValue) Values() []float64 {
+func (this EatonValue) Values() []float64 {
 	return this.V
 }
 
-func (this *EatonValue) Time() time.Time {
+func (this EatonValue) Time() time.Time {
 	return this.T
 }
 
-func (this *EatonValue) Print() {
-	spew.Dump(*this)
+func (this EatonValue) Print() {
+	spew.Dump(this)
 }
 
 type Eaton struct {
