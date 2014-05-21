@@ -16,7 +16,7 @@
             <h1 style="margin: 10px;">
             <span style="color: green;">B</span>oelter<br/>Smart<br/>Meter
             </h1>
-            <ul class="list-group" style="margin: 0 10px;">
+            <ul class="list-group" style="margin: 0 10px; overflow-x: hidden;">
               <li class="list-group-item" style="cursor:pointer" ng-repeat="meter in meters" ng-class="{'active': isActiveMeter(meter) }" ng-click="setActiveMeter(meter)">
                     <h4 class="list-group-item-heading">{{ meter.name }}</h4>
                     <p class="list-group-item-text">{{ meter.addr }}</p>
