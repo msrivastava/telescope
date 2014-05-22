@@ -16,13 +16,8 @@ const (
 	db = "mongodb://demo:demo@oceanic.mongohq.com:10074/telescope"
 )
 
-type MeterInfo struct {
-	Name string `json:"name"`
-	Addr string `json:"addr"`
-}
-
 var (
-	Meters = []MeterInfo{
+	Meters = []Eaton{
 		{
 			Name: "meter0",
 			Addr: "128.97.11.100:4660",
@@ -52,18 +47,18 @@ func main() {
 		panic(err)
 	}
 	defer session.Close()
+	c := session.DB("").C("meter")
+	c.EnsureIndex(mgo.Index{
+		Key:        []string{"t"},
+		Unique:     true,
+		DropDups:   true,
+		Background: true,
+		Sparse:     true,
+	})
 
 	// poll data
 	for _, meter := range Meters {
-		go func(m MeterInfo) {
-			c := session.DB("").C(m.Name)
-			c.EnsureIndex(mgo.Index{
-				Key:        []string{"t"},
-				Unique:     true,
-				DropDups:   true,
-				Background: true,
-				Sparse:     true,
-			})
+		go func(m Eaton) {
 			meter := Eaton{Addr: m.Addr}
 			fmt.Printf("start meter %v\n", m.Addr)
 			for _ = range time.Tick(5 * time.Second) {
@@ -92,13 +87,13 @@ func main() {
 	m.Get("/:meter/:start/:stop", func(params martini.Params) (int, string) {
 		start, _ := strconv.ParseInt(params["start"], 10, 64)
 		stop, _ := strconv.ParseInt(params["stop"], 10, 64)
-		c := session.DB("").C(params["meter"])
 		var results []EatonValue
 		err := c.Find(bson.M{
 			"t": bson.M{
 				"$lt":  time.Unix(stop, 0),
 				"$gte": time.Unix(start, 0),
 			},
+			"m": params["meter"],
 		}).Sort("t").All(&results)
 		if err != nil {
 			return http.StatusBadRequest, ""
@@ -108,6 +103,21 @@ func main() {
 
 	m.Get("/list", func() (int, string) {
 		return http.StatusOK, MustEncode(Meters)
+	})
+
+	m.Get("/avg", func() (int, string) {
+		type MeterResp struct {
+			M string  `json:"_id"`
+			V float64 `json:"v"`
+		}
+		var value []MeterResp
+		c.Pipe([]bson.M{
+			{"$group": bson.M{
+				"_id": "$m",
+				"v":   bson.M{"$avg": "$v[9]"},
+			}}}).All(&value)
+		return http.StatusOK, MustEncode(value)
+
 	})
 
 	m.Run()

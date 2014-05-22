@@ -18,6 +18,7 @@ const (
 type EatonValue struct {
 	V []float64 `json:"v"`
 	T time.Time `json:"t"`
+	M string    `json:"m"`
 }
 
 func (this EatonValue) Unit() string {
@@ -37,7 +38,8 @@ func (this EatonValue) Print() {
 }
 
 type Eaton struct {
-	Addr string
+	Name string `json:"name"`
+	Addr string `json:"addr"`
 }
 
 func (this *Eaton) Read() (value EatonValue, err error) {
@@ -70,6 +72,7 @@ func (this *Eaton) Read() (value EatonValue, err error) {
 		err = errors.New(fmt.Sprintf("[%v] expected %v but got %v", this.Addr, RegNum*4, b))
 		return
 	}
+	value.M = this.Name
 	value.T = time.Now()
 	for i := 0; i < RegNum; i++ {
 		var f float32
