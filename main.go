@@ -59,10 +59,9 @@ func main() {
 	// poll data
 	for _, meter := range Meters {
 		go func(m Eaton) {
-			meter := Eaton{Addr: m.Addr}
 			fmt.Printf("start meter %v\n", m.Addr)
 			for _ = range time.Tick(5 * time.Second) {
-				v, err := meter.Read()
+				v, err := m.Read()
 				if err != nil {
 					fmt.Println(err)
 					continue
