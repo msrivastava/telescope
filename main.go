@@ -140,9 +140,10 @@ func main() {
 		return "Made By Tai-Lin Chu. Released under GPL2. :)"
 	})
 
-	m.Get("/:meter/:start/:stop", func(params martini.Params, r render.Render) {
+	m.Get("/:meter/:start/:stop/:step", func(params martini.Params, r render.Render) {
 		start, _ := strconv.ParseInt(params["start"], 10, 64)
 		stop, _ := strconv.ParseInt(params["stop"], 10, 64)
+		step, _ := strconv.ParseInt(params["step"], 10, 64)
 		var results []EatonValue
 		err := c.Find(bson.M{
 			"t": bson.M{
@@ -155,7 +156,7 @@ func main() {
 			r.JSON(http.StatusBadRequest, nil)
 			return
 		}
-		r.JSON(http.StatusOK, results)
+		r.JSON(http.StatusOK, filterStep(start, stop, step, results))
 	})
 
 	m.Get("/list", func(r render.Render) {
@@ -163,4 +164,35 @@ func main() {
 	})
 
 	m.Run()
+}
+
+func computePower(v EatonValue) float64 {
+	n := v.V[9]
+	if n >= 0 {
+		return n
+	}
+	return -n
+}
+
+func filterStep(start, stop, step int64, data []EatonValue) (values []float64) {
+	var j int
+	var v float64
+	for i := start; i < stop; i += step {
+		for j < len(data) && data[j].T.Unix() < i {
+			j++
+		}
+		if j >= len(data) {
+			values = append(values, v)
+			continue
+		}
+		t := data[j].T.Unix()
+		if i <= t && t < i+step {
+			read := computePower(data[j])
+			if read != 0 {
+				v = read
+			}
+		}
+		values = append(values, v)
+	}
+	return
 }

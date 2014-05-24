@@ -50,43 +50,13 @@ app.controller("meterController", function($scope, $http, $timeout) {
         div.append("div").attr("class", "axis").call(context.axis().orient("top"));
         div.append("div").attr("class", "rule").call(context.rule());
     });
-    function computePower(p) {
-        return Math.abs(p.v[9]);
-    }
-    function nonzero(l) {
-        var count = 0;
-        for (var i = 0; i < l.length; i++) {
-            if (l[i] != 0) count++;
-        }
-        return count;
-    }
     function energy(meter) {
-        var v = NaN;
         return context.metric(function(start, stop, step, callback) {
-            var req = "/" + meter + "/" + start.getTime() / 1e3 + "/" + stop.getTime() / 1e3;
+            var req = "/" + meter + "/" + start.getTime() / 1e3 + "/" + stop.getTime() / 1e3 + "/" + step / 1e3;
             $http.get(req).success(function(data) {
                 if (!data) return callback(new Error("unable to load data"));
-                var values = [];
-                var j = 0;
-                for (var i = +start; i < +stop; i += step) {
-                    while (j < data.length && +Date.parse(data[j].t) < i) {
-                        j++;
-                    }
-                    if (j >= data.length) {
-                        values.push(v);
-                        continue;
-                    }
-                    var t = +Date.parse(data[j].t);
-                    if (i <= t && t < i + step) {
-                        var read = computePower(data[j]);
-                        if (read != 0) {
-                            v = read;
-                        }
-                    }
-                    values.push(v);
-                }
-                console.log(nonzero(values), data, values);
-                callback(null, values);
+                console.log(data.length);
+                callback(null, data);
             });
         });
     }
