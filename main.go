@@ -142,7 +142,7 @@ func main() {
 	m.Use(martini.Recovery())
 
 	m.Get("/", func() string {
-		return fmt.Sprintf("/%d/%d", time.Now().Add(-time.Minute).Unix(), time.Now().Unix())
+		return "Made By Tai-Lin Chu. Released under GPL2. :)"
 	})
 
 	m.Get("/:meter/:start/:stop", func(params martini.Params) (int, string) {

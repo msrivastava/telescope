@@ -36,7 +36,7 @@ app.controller("meterController", function($scope, $http, $timeout) {
         d3.select("#chart").call(function(div) {
             div.selectAll(".horizon").remove();
             div.selectAll(".comparison").remove();
-            div.selectAll(".horizon").data([ primary ]).enter().append("div").attr("class", "horizon").call(context.horizon().height(400).format(d3.format(".2f")).title("Energy").extent([0, 2000]));
+            div.selectAll(".horizon").data([ primary ]).enter().append("div").attr("class", "horizon").call(context.horizon().height(300).format(d3.format(".2f")).title("Energy").extent([0, 2000]));
             div.selectAll(".comparison").data([ [ primary, secondary ] ]).enter().append("div").attr("class", "comparison").call(context.comparison().height(200).formatChange(d3.format(".1f%")).title("Daily Change"));
         });
         context.on("focus", function(i) {
@@ -45,7 +45,7 @@ app.controller("meterController", function($scope, $http, $timeout) {
         });
         updateStats();
     };
-    var context = cubism.context().serverDelay(60 * 1e3).step(60 * 1e3).size(800);
+    var context = cubism.context().serverDelay(60 * 1e3).step(60 * 1e3).size(500);
     d3.select("#chart").call(function(div) {
         div.append("div").attr("class", "axis").call(context.axis().orient("top"));
         div.append("div").attr("class", "rule").call(context.rule());
