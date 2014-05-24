@@ -45,7 +45,7 @@ app.controller("meterController", function($scope, $http, $timeout) {
         });
         updateStats();
     };
-    var context = cubism.context().serverDelay(60 * 1e3).step(60 * 1e3).size(500);
+    var context = cubism.context().serverDelay(3e5).step(3e5).size(500);
     d3.select("#chart").call(function(div) {
         div.append("div").attr("class", "axis").call(context.axis().orient("top"));
         div.append("div").attr("class", "rule").call(context.rule());
