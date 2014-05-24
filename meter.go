@@ -38,8 +38,12 @@ func (this EatonValue) Print() {
 }
 
 type Eaton struct {
-	Name string `json:"name"`
-	Addr string `json:"addr"`
+	Name   string `json:"name"`
+	Addr   string `json:"addr"`
+	Avg    float64
+	Max    float64
+	Min    float64
+	Stddev float64
 }
 
 func (this *Eaton) Read() (value EatonValue, err error) {

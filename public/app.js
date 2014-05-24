@@ -1,14 +1,34 @@
 var app = angular.module("telescope", []);
 
-app.controller("meterController", function($scope, $http) {
+app.controller("meterController", function($scope, $http, $timeout) {
+    $scope.stats = {};
     $scope.meters = [];
-    $http.get("/list").success(function(data) {
-        $scope.meters = data;
-    });
+    var sync = function() {
+        console.log("sync");
+        $http.get("/list").success(function(data) {
+            $scope.meters = data;
+            updateStats();
+        });
+        $timeout(sync, 6e4);
+    };
+    sync();
     $scope.activeMeter = "";
     $scope.isActiveMeter = function(meter) {
         return meter.name == $scope.activeMeter;
     };
+    function updateStats() {
+        for (var i in $scope.meters) {
+            if ($scope.meters[i].name == $scope.activeMeter) {
+                $scope.stats = {};
+                for (var j in $scope.meters[i]) {
+                    if (j == "name" || j == "addr") {
+                        continue
+                    }
+                    $scope.stats[j] = $scope.meters[i][j];
+                }
+            }
+        }
+    }
     $scope.setActiveMeter = function(meter) {
         console.log(meter);
         $scope.activeMeter = meter.name;
@@ -16,13 +36,14 @@ app.controller("meterController", function($scope, $http) {
         d3.select("#chart").call(function(div) {
             div.selectAll(".horizon").remove();
             div.selectAll(".comparison").remove();
-            div.selectAll(".horizon").data([ primary ]).enter().append("div").attr("class", "horizon").call(context.horizon().height(400).format(d3.format(".2f")).title("Energy"));
+            div.selectAll(".horizon").data([ primary ]).enter().append("div").attr("class", "horizon").call(context.horizon().height(400).format(d3.format(".2f")).title("Energy").extent([0, 2000]));
             div.selectAll(".comparison").data([ [ primary, secondary ] ]).enter().append("div").attr("class", "comparison").call(context.comparison().height(200).formatChange(d3.format(".1f%")).title("Daily Change"));
         });
         context.on("focus", function(i) {
             format = d3.format(".1f");
             d3.selectAll(".horizon .value").style("right", i === null ? null : context.size() - i + "px").text(format(primary.valueAt(Math.floor(i))) + " W");
         });
+        updateStats();
     };
     var context = cubism.context().serverDelay(60 * 1e3).step(60 * 1e3).size(800);
     d3.select("#chart").call(function(div) {
