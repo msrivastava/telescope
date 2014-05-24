@@ -1,9 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/go-martini/martini"
+	"github.com/martini-contrib/gzip"
+	"github.com/martini-contrib/render"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/http"
@@ -31,14 +32,6 @@ var (
 		},
 	}
 )
-
-func MustEncode(data interface{}) string {
-	b, err := json.Marshal(data)
-	if err != nil {
-		panic(err)
-	}
-	return string(b)
-}
 
 type MapReduceValue struct {
 	Id    string             `bson:"_id" json:"_id"`
@@ -139,13 +132,15 @@ func main() {
 
 	// server
 	m := martini.Classic()
+	m.Use(gzip.All())
+	m.Use(render.Renderer())
 	m.Use(martini.Recovery())
 
 	m.Get("/", func() string {
 		return "Made By Tai-Lin Chu. Released under GPL2. :)"
 	})
 
-	m.Get("/:meter/:start/:stop", func(params martini.Params) (int, string) {
+	m.Get("/:meter/:start/:stop", func(params martini.Params, r render.Render) {
 		start, _ := strconv.ParseInt(params["start"], 10, 64)
 		stop, _ := strconv.ParseInt(params["stop"], 10, 64)
 		var results []EatonValue
@@ -157,13 +152,14 @@ func main() {
 			"m": params["meter"],
 		}).Sort("t").All(&results)
 		if err != nil {
-			return http.StatusBadRequest, ""
+			r.JSON(http.StatusBadRequest, nil)
+			return
 		}
-		return http.StatusOK, MustEncode(results)
+		r.JSON(http.StatusOK, results)
 	})
 
-	m.Get("/list", func() (int, string) {
-		return http.StatusOK, MustEncode(Meters)
+	m.Get("/list", func(r render.Render) {
+		r.JSON(http.StatusOK, Meters)
 	})
 
 	m.Run()
