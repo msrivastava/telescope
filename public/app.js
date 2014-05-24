@@ -1,4 +1,4 @@
-var app = angular.module("telescope", []);
+var app = angular.module("telescope", ['angular-loading-bar', 'ngAnimate']);
 
 app.controller("meterController", function($scope, $http, $timeout) {
     $scope.stats = {};
@@ -64,7 +64,7 @@ app.controller("meterController", function($scope, $http, $timeout) {
         var v = NaN;
         return context.metric(function(start, stop, step, callback) {
             var req = "/" + meter + "/" + start.getTime() / 1e3 + "/" + stop.getTime() / 1e3;
-            d3.json(req, function(data) {
+            $http.get(req).success(function(data) {
                 if (!data) return callback(new Error("unable to load data"));
                 var values = [];
                 var j = 0;

@@ -4,29 +4,34 @@
     <title>Boelter Smart Meter</title>
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular-animate.min.js"></script>
+    <script src="https://chieffancypants.github.io/angular-loading-bar/src/loading-bar.js"></script>
+    <link href="https://chieffancypants.github.io/angular-loading-bar/src/loading-bar.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" />
     <script src="https://rawgithub.com/square/cubism/master/cubism.v1.min.js"></script>
+
     <link rel="shortcut icon" href="favicon.ico" />
     <link href="style.css" rel="stylesheet" />
     <script src="app.js"></script>
 </head>
 <body>
+    <div class="container">
     <div class="row" ng-controller="meterController">
         <div class="col-md-3">
-            <h1 style="margin: 10px;">
+            <h1>
                 <span style="color: green;">B</span>oelter
                 <br />
                 Smart
                 <br />
                 Meter
             </h1>
-            <ul class="list-group" style="margin: 0 10px; overflow-x: hidden;">
+            <ul class="list-group">
                 <li class="list-group-item" style="cursor:pointer" ng-repeat="meter in meters" ng-class="{'active': isActiveMeter(meter) }" ng-click="setActiveMeter(meter)">
                     <h4 class="list-group-item-heading">{{ meter.name }}</h4>
                     <p class="list-group-item-text">{{ meter.addr }}</p>
                 </li>
             </ul>
-            <p style="color: #777; font-size: small; margin: 10px;">
+            <p style="color: #777; font-size: small;">
                 Built by
                 <i>Tai-Lin Chu</i>
                 with Help of
@@ -67,6 +72,7 @@
         <div class="col-md-6">
             <div id="chart"></div>
         </div>
+    </div>
     </div>
 </body>
 </html>
