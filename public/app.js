@@ -24,7 +24,7 @@ app.controller("meterController", function($scope, $http) {
             d3.selectAll(".horizon .value").style("right", i === null ? null : context.size() - i + "px").text(format(primary.valueAt(Math.floor(i))) + " W");
         });
     };
-    var context = cubism.context().serverDelay(10 * 1e3).step(10 * 1e3).size(800);
+    var context = cubism.context().serverDelay(60 * 1e3).step(60 * 1e3).size(800);
     d3.select("#chart").call(function(div) {
         div.append("div").attr("class", "axis").call(context.axis().orient("top"));
         div.append("div").attr("class", "rule").call(context.rule());

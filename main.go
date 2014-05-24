@@ -8,7 +8,6 @@ import (
 	"labix.org/v2/mgo/bson"
 	"net/http"
 	"strconv"
-	//"strings"
 	"time"
 )
 
@@ -41,12 +40,18 @@ func MustEncode(data interface{}) string {
 	return string(b)
 }
 
+type MapReduceValue struct {
+	Id    string             `bson:"_id" json:"_id"`
+	Value map[string]float64 `bson:"value" json:"value"`
+}
+
 func main() {
 	session, err := mgo.Dial(db)
 	if err != nil {
 		panic(err)
 	}
 	defer session.Close()
+
 	c := session.DB("").C("meter")
 	c.EnsureIndex(mgo.Index{
 		Key:        []string{"t"},
@@ -60,7 +65,7 @@ func main() {
 	for _, meter := range Meters {
 		go func(m Eaton) {
 			fmt.Printf("start meter %v\n", m.Addr)
-			for _ = range time.Tick(5 * time.Second) {
+			for _ = range time.Tick(time.Minute) {
 				v, err := m.Read()
 				if err != nil {
 					fmt.Println(err)
@@ -105,18 +110,48 @@ func main() {
 	})
 
 	m.Get("/avg", func() (int, string) {
-		type MeterResp struct {
-			M string  `json:"_id"`
-			V float64 `json:"v"`
+		var results []MapReduceValue
+		job := &mgo.MapReduce{
+			Map: `function() {
+				if (new Date(new Date() - 1000 * 60 * 60) > this.t) {
+					return
+				}
+				var n = Math.abs(this.v[9])
+				emit(this.m, // Or put a GROUP BY key here
+				{
+				 	sum: n, // the field you want stats for
+					min: n,
+					max: n,
+					count:1,
+					diff: 0,
+				});
+			}`,
+			Reduce: `function(key, values) {
+				var a = values[0]; // will reduce into here
+				for (var i=1; i < values.length; i++){
+					var b = values[i]; // will merge 'b' into 'a'
+					// temp helpers
+					var delta = a.sum/a.count - b.sum/b.count; // a.mean - b.mean
+					var weight = (a.count * b.count)/(a.count + b.count);
+					
+					// do the reducing
+					a.diff += b.diff + delta*delta*weight;
+					a.sum += b.sum;
+					a.count += b.count;
+					a.min = Math.min(a.min, b.min);
+					a.max = Math.max(a.max, b.max);
+				}
+				return a;
+			}`,
+			Finalize: `function(key, value) { 
+				value.avg = value.sum / value.count;
+				value.variance = value.diff / value.count;
+				value.stddev = Math.sqrt(value.variance);
+				return value;
+			}`,
 		}
-		var value []MeterResp
-		c.Pipe([]bson.M{
-			{"$group": bson.M{
-				"_id": "$m",
-				"v":   bson.M{"$avg": "$v[9]"},
-			}}}).All(&value)
-		return http.StatusOK, MustEncode(value)
-
+		c.Find(nil).MapReduce(job, &results)
+		return http.StatusOK, MustEncode(results)
 	})
 
 	m.Run()
