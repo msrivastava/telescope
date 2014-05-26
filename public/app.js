@@ -77,7 +77,7 @@ app.controller("meterController", function($scope, $http, $timeout) {
             $http.get(req).success(function(data) {
                 if (!data) return callback(new Error("unable to load data"));
                 console.log(data.length);
-                callback(null, smooth(data));
+                callback(null, data);
             });
         });
     }
