@@ -36,7 +36,7 @@ app.controller("meterController", function($scope, $http, $timeout) {
         d3.select("#chart").call(function(div) {
             div.selectAll(".horizon").remove();
             div.selectAll(".comparison").remove();
-            div.selectAll(".horizon").data([ primary ]).enter().append("div").attr("class", "horizon").call(context.horizon().height(300).format(d3.format(".2f")).title("Energy"));
+            div.selectAll(".horizon").data([ primary ]).enter().append("div").attr("class", "horizon").call(context.horizon().height(300).format(d3.format(".2f")).title("Energy").colors(["#bdd7e7","#bae4b3"]));
             div.selectAll(".comparison").data([ [ primary, secondary ] ]).enter().append("div").attr("class", "comparison").call(context.comparison().height(200).formatChange(d3.format(".1f%")).title("Daily Change"));
         });
         context.on("focus", function(i) {
