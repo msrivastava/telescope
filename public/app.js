@@ -36,7 +36,7 @@ app.controller("meterController", function($scope, $http, $timeout) {
         d3.select("#chart").call(function(div) {
             div.selectAll(".horizon").remove();
             div.selectAll(".comparison").remove();
-            div.selectAll(".horizon").data([ primary ]).enter().append("div").attr("class", "horizon").call(context.horizon().height(300).format(d3.format(".2f")).title("Energy").extent([0, 2000]));
+            div.selectAll(".horizon").data([ primary ]).enter().append("div").attr("class", "horizon").call(context.horizon().height(300).format(d3.format(".2f")).title("Energy"));
             div.selectAll(".comparison").data([ [ primary, secondary ] ]).enter().append("div").attr("class", "comparison").call(context.comparison().height(200).formatChange(d3.format(".1f%")).title("Daily Change"));
         });
         context.on("focus", function(i) {
@@ -51,7 +51,7 @@ app.controller("meterController", function($scope, $http, $timeout) {
         div.append("div").attr("class", "rule").call(context.rule());
     });
     function smooth(data) {
-        var kernel = [6, 4, 1];
+        var kernel = [70, 56, 28, 8, 1];
         for (var i = 0; i < data.length; i++) {
             var c = kernel[0];
             var v = data[i];
