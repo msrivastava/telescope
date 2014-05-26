@@ -50,13 +50,34 @@ app.controller("meterController", function($scope, $http, $timeout) {
         div.append("div").attr("class", "axis").call(context.axis().orient("top"));
         div.append("div").attr("class", "rule").call(context.rule());
     });
+    function smooth(data) {
+        var kernel = [6, 4, 1];
+        for (var i = 0; i < data.length; i++) {
+            var c = kernel[0];
+            var v = data[i];
+            for (var j = 1; j < kernel.length; j++) {
+                p = data[i+j];
+                m = data[i-j];
+                if (p != undefined) {
+                    v += p;
+                    c += kernel[j];
+                }
+                if (m != undefined) {
+                    v += m;
+                    c += kernel[j];
+                }
+            }
+            data[i] = v/c;
+        }
+        return data;
+    }
     function energy(meter) {
         return context.metric(function(start, stop, step, callback) {
             var req = "/" + meter + "/" + start.getTime() / 1e3 + "/" + stop.getTime() / 1e3 + "/" + step / 1e3;
             $http.get(req).success(function(data) {
                 if (!data) return callback(new Error("unable to load data"));
                 console.log(data.length);
-                callback(null, data);
+                callback(null, smooth(data));
             });
         });
     }
