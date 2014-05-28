@@ -19,8 +19,9 @@ const (
 )
 
 var (
-	Meters []Eaton
-	ACL    []AccessControl
+	Meters  []Eaton
+	ACL     []AccessControl
+	Session *mgo.Session
 )
 
 func readMeterConfig() {
@@ -45,6 +46,21 @@ func readACLConfig() {
 	}
 }
 
+func meterCollection() *mgo.Collection {
+	if Session == nil {
+		Session, _ = mgo.Dial(db)
+	}
+	c := Session.Clone().DB("").C("meter")
+	c.EnsureIndex(mgo.Index{
+		Key:        []string{"t"},
+		Unique:     true,
+		DropDups:   true,
+		Background: true,
+		Sparse:     true,
+	})
+	return c
+}
+
 type MapReduceValue struct {
 	Id    string             `bson:"_id" json:"_id"`
 	Value map[string]float64 `bson:"value" json:"value"`
@@ -53,22 +69,6 @@ type MapReduceValue struct {
 func main() {
 	readMeterConfig()
 	readACLConfig()
-
-	session, err := mgo.Dial(db)
-	if err != nil {
-		panic(err)
-	}
-	defer session.Close()
-
-	c := session.DB("").C("meter")
-	c.EnsureIndex(mgo.Index{
-		Key:        []string{"t"},
-		Unique:     true,
-		DropDups:   true,
-		Background: true,
-		Sparse:     true,
-	})
-
 	// poll data
 	for _, meter := range Meters {
 		go func(m Eaton) {
@@ -79,7 +79,7 @@ func main() {
 					fmt.Println(err)
 					continue
 				}
-				err = c.Insert(v)
+				err = meterCollection().Insert(v)
 				if err != nil {
 					fmt.Println(err)
 					continue
@@ -130,7 +130,7 @@ func main() {
 					return value;
 				}`,
 			}
-			c.Find(nil).MapReduce(job, &results)
+			meterCollection().Find(nil).MapReduce(job, &results)
 			for _, result := range results {
 				for i := range Meters {
 					if result.Id == Meters[i].Name {
@@ -165,7 +165,7 @@ func main() {
 		stop, _ := strconv.ParseInt(params["stop"], 10, 64)
 		step, _ := strconv.ParseInt(params["step"], 10, 64)
 		var results []EatonValue
-		err := c.Find(bson.M{
+		err := meterCollection().Find(bson.M{
 			"t": bson.M{
 				"$lt":  time.Unix(stop, 0),
 				"$gte": time.Unix(start, 0),
