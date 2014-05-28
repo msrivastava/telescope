@@ -1,0 +1,6 @@
+[
+	{
+		"ip": "*",
+		"meters": ["meter0", "meter1", "meter2"]
+	}
+]

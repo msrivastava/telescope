@@ -70,7 +70,10 @@
             </ul>
         </div>
         <div class="col-md-6">
-            <div id="chart"></div>
+            <div class="well" style="margin-top: 40px;" ng-show="na">
+                you don't have access to this meter.
+            </div>
+            <div id="chart" ng-hide="na"></div>
         </div>
     </div>
     </div>

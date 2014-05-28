@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/gzip"
 	"github.com/martini-contrib/render"
+	"io/ioutil"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/http"
@@ -17,21 +19,31 @@ const (
 )
 
 var (
-	Meters = []Eaton{
-		{
-			Name: "meter0",
-			Addr: "128.97.11.100:4660",
-		},
-		{
-			Name: "meter1",
-			Addr: "128.97.11.101:4660",
-		},
-		{
-			Name: "meter2",
-			Addr: "128.97.11.102:4660",
-		},
-	}
+	Meters []Eaton
+	ACL    []AccessControl
 )
+
+func readMeterConfig() {
+	b, err := ioutil.ReadFile("meters.json")
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(b, &Meters)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func readACLConfig() {
+	b, err := ioutil.ReadFile("access.json")
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(b, &ACL)
+	if err != nil {
+		panic(err)
+	}
+}
 
 type MapReduceValue struct {
 	Id    string             `bson:"_id" json:"_id"`
@@ -39,6 +51,9 @@ type MapReduceValue struct {
 }
 
 func main() {
+	readMeterConfig()
+	readACLConfig()
+
 	session, err := mgo.Dial(db)
 	if err != nil {
 		panic(err)
@@ -140,7 +155,12 @@ func main() {
 		return "Made By Tai-Lin Chu. Released under GPL2. :)"
 	})
 
-	m.Get("/:meter/:start/:stop/:step", func(params martini.Params, r render.Render) {
+	m.Get("/:meter/:start/:stop/:step", func(params martini.Params, r render.Render, req *http.Request) {
+		if !canAccess(req.RemoteAddr, params["meter"]) {
+			fmt.Printf("access deny(%v): %v\n", params["meter"], req.RemoteAddr)
+			r.JSON(http.StatusBadRequest, nil)
+			return
+		}
 		start, _ := strconv.ParseInt(params["start"], 10, 64)
 		stop, _ := strconv.ParseInt(params["stop"], 10, 64)
 		step, _ := strconv.ParseInt(params["step"], 10, 64)
@@ -156,7 +176,7 @@ func main() {
 			r.JSON(http.StatusBadRequest, nil)
 			return
 		}
-		r.JSON(http.StatusOK, filterStep(start, stop, step, results))
+		r.JSON(http.StatusOK, resample(start, stop, step, results))
 	})
 
 	m.Get("/list", func(r render.Render) {
@@ -166,15 +186,16 @@ func main() {
 	m.Run()
 }
 
-func computePower(v EatonValue) float64 {
-	n := v.V[9]
-	if n >= 0 {
-		return n
+func canAccess(addr, meter string) bool {
+	for _, a := range ACL {
+		if a.Match(addr) {
+			return a.HasMeter(meter)
+		}
 	}
-	return -n
+	return false
 }
 
-func filterStep(start, stop, step int64, data []EatonValue) (values []float64) {
+func resample(start, stop, step int64, data []EatonValue) (values []float64) {
 	var j int
 	var v float64
 	for i := start; i < stop; i += step {
@@ -187,7 +208,7 @@ func filterStep(start, stop, step int64, data []EatonValue) (values []float64) {
 		}
 		t := data[j].T.Unix()
 		if i <= t && t < i+step {
-			read := computePower(data[j])
+			read := data[j].Power()
 			if read != 0 {
 				v = read
 			}

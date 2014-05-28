@@ -21,12 +21,16 @@ type EatonValue struct {
 	M string    `json:"m"`
 }
 
-func (this EatonValue) Unit() string {
-	return "kW"
-}
-
 func (this EatonValue) Values() []float64 {
 	return this.V
+}
+
+func (this EatonValue) Power() float64 {
+	n := this.V[9]
+	if n >= 0 {
+		return n
+	}
+	return -n
 }
 
 func (this EatonValue) Time() time.Time {
