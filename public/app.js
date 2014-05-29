@@ -31,7 +31,7 @@ app.controller("meterController", function($scope, $http, $timeout) {
         }
     }
     var context = cubism.context().serverDelay(6e4).step(6e4).size(500);
-    var horizon = context.horizon().height(300).format(d3.format(".2f")).title("Energy").colors(["#bdd7e7","#bae4b3"]);
+    var horizon = context.horizon().height(300).format(d3.format(".2f")).title("Power").colors(["#bdd7e7","#bae4b3"]);
     var comparison = context.comparison().height(200).formatChange(d3.format(".1f%")).title("Daily Change");
     $scope.setActiveMeter = function(meter) {
         console.log(meter);

@@ -19,9 +19,8 @@ const (
 )
 
 var (
-	Meters  []Eaton
-	ACL     []AccessControl
-	Session *mgo.Session
+	Meters []Eaton
+	ACL    []AccessControl
 )
 
 func readMeterConfig() {
@@ -46,11 +45,12 @@ func readACLConfig() {
 	}
 }
 
-func meterCollection() *mgo.Collection {
-	if Session == nil {
-		Session, _ = mgo.Dial(db)
+func getCollection() *mgo.Collection {
+	session, err := mgo.Dial(db)
+	if err != nil {
+		panic(err)
 	}
-	c := Session.Clone().DB("").C("meter")
+	c := session.DB("").C("meter")
 	c.EnsureIndex(mgo.Index{
 		Key:        []string{"t"},
 		Unique:     true,
@@ -67,6 +67,7 @@ type MapReduceValue struct {
 }
 
 func main() {
+	meterCollection := getCollection()
 	readMeterConfig()
 	readACLConfig()
 	// poll data
@@ -79,7 +80,7 @@ func main() {
 					fmt.Println(err)
 					continue
 				}
-				err = meterCollection().Insert(v)
+				err = meterCollection.Insert(v)
 				if err != nil {
 					fmt.Println(err)
 					continue
@@ -90,7 +91,7 @@ func main() {
 	// get power stat
 	go func() {
 		var results []MapReduceValue
-		for _ = range time.Tick(time.Minute) {
+		for _ = range time.Tick(time.Minute * 10) {
 			job := &mgo.MapReduce{
 				Map: `function() {
 					if (new Date(new Date() - 1000 * 60 * 60) > this.t) {
@@ -130,7 +131,7 @@ func main() {
 					return value;
 				}`,
 			}
-			meterCollection().Find(nil).MapReduce(job, &results)
+			meterCollection.Find(nil).MapReduce(job, &results)
 			for _, result := range results {
 				for i := range Meters {
 					if result.Id == Meters[i].Name {
@@ -152,7 +153,7 @@ func main() {
 	m.Use(martini.Recovery())
 
 	m.Get("/", func() string {
-		return "Made By Tai-Lin Chu. Released under GPL2. :)"
+		return "Built By Tai-Lin Chu. Released under GPL2. :)"
 	})
 
 	m.Get("/:meter/:start/:stop/:step", func(params martini.Params, r render.Render, req *http.Request) {
@@ -165,7 +166,7 @@ func main() {
 		stop, _ := strconv.ParseInt(params["stop"], 10, 64)
 		step, _ := strconv.ParseInt(params["step"], 10, 64)
 		var results []EatonValue
-		err := meterCollection().Find(bson.M{
+		err := meterCollection.Find(bson.M{
 			"t": bson.M{
 				"$lt":  time.Unix(stop, 0),
 				"$gte": time.Unix(start, 0),
