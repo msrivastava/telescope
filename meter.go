@@ -26,7 +26,7 @@ func (this EatonValue) Values() []float64 {
 }
 
 func (this EatonValue) Power() float64 {
-	n := this.V[9]
+	n := this.V[0]
 	if n >= 0 {
 		return n
 	}

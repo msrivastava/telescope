@@ -172,6 +172,9 @@ func main() {
 				"$gte": time.Unix(start, 0),
 			},
 			"m": params["meter"],
+		}).Select(bson.M{
+			"t": 1,
+			"v": bson.M{"$slice": []int{9, 1}},
 		}).Sort("t").All(&results)
 		if err != nil {
 			r.JSON(http.StatusBadRequest, nil)
@@ -200,14 +203,14 @@ func resample(start, stop, step int64, data []EatonValue) (values []float64) {
 	var j int
 	var v float64
 	for i := start; i < stop; i += step {
-		for j < len(data) && data[j].T.Unix() < i {
+		for j < len(data) && data[j].Time().Unix() < i {
 			j++
 		}
 		if j >= len(data) {
 			values = append(values, v)
 			continue
 		}
-		t := data[j].T.Unix()
+		t := data[j].Time().Unix()
 		if i <= t && t < i+step {
 			read := data[j].Power()
 			if read != 0 {
