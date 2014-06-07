@@ -52,7 +52,7 @@ func getCollection() *mgo.Collection {
 	}
 	c := session.DB("").C("meter")
 	c.EnsureIndex(mgo.Index{
-		Key:        []string{"t"},
+		Key:        []string{"m", "t"},
 		Unique:     true,
 		DropDups:   true,
 		Background: true,
