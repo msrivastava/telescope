@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/gzip"
@@ -19,12 +20,14 @@ const (
 )
 
 var (
-	Meters []Eaton
-	ACL    []AccessControl
+	Meters    []Eaton
+	ACL       []AccessControl
+	MeterFile = flag.String("meter", "meters.json", "meter config json file")
+	ACLFile   = flag.String("access", "access.json", "access control json file")
 )
 
 func readMeterConfig() {
-	b, err := ioutil.ReadFile("meters.json")
+	b, err := ioutil.ReadFile(*MeterFile)
 	if err != nil {
 		panic(err)
 	}
@@ -35,7 +38,7 @@ func readMeterConfig() {
 }
 
 func readACLConfig() {
-	b, err := ioutil.ReadFile("access.json")
+	b, err := ioutil.ReadFile(*ACLFile)
 	if err != nil {
 		panic(err)
 	}
@@ -67,6 +70,7 @@ type MapReduceValue struct {
 }
 
 func main() {
+	flag.Parse()
 	meterCollection := getCollection()
 	readMeterConfig()
 	readACLConfig()
