@@ -1,0 +1,33 @@
+{
+	"ImportPath": "github.com/taylorchu/telescope",
+	"GoVersion": "go1.2.1",
+	"Deps": [
+		{
+			"ImportPath": "github.com/codegangsta/inject",
+			"Comment": "v1.0-rc1",
+			"Rev": "37d7f8432a3e684eef9b2edece76bdfa6ac85b39"
+		},
+		{
+			"ImportPath": "github.com/davecgh/go-spew/spew",
+			"Rev": "9ed19f9b0c9116d712e32dee78f1704cb9fc5b02"
+		},
+		{
+			"ImportPath": "github.com/go-martini/martini",
+			"Comment": "v1.0-rc1",
+			"Rev": "de643861770082784ad14cba4557ad68568dcc7b"
+		},
+		{
+			"ImportPath": "github.com/martini-contrib/gzip",
+			"Rev": "c3f190769fc0769188614bbf077c82dacb8e9505"
+		},
+		{
+			"ImportPath": "github.com/martini-contrib/render",
+			"Rev": "c8d058a00a82f27bfc8a49d62525b7c60efcf5b8"
+		},
+		{
+			"ImportPath": "labix.org/v2/mgo",
+			"Comment": "274",
+			"Rev": "gustavo@niemeyer.net-20140312230639-09nxw5qqax6dlcqh"
+		}
+	]
+}
