@@ -16,14 +16,15 @@ import (
 )
 
 const (
-	db = "mongodb://demo:demo@oceanic.mongohq.com:10074/telescope"
+	DB_URL = "mongodb://demo:demo@oceanic.mongohq.com:10074/telescope"
 )
 
 var (
-	Meters    []Eaton
-	ACL       []AccessControl
-	MeterFile = flag.String("meter", "meters.json", "meter config json file")
-	ACLFile   = flag.String("access", "access.json", "access control json file")
+	Meters      []Eaton
+	ACL         []AccessControl
+	MeterFile   = flag.String("meter", "meters.json", "meter config json file")
+	ACLFile     = flag.String("access", "access.json", "access control json file")
+	MainSession = session()
 )
 
 func readMeterConfig() {
@@ -48,12 +49,17 @@ func readACLConfig() {
 	}
 }
 
-func getCollection() *mgo.Collection {
-	session, err := mgo.Dial(db)
+func session() *mgo.Session {
+	session, err := mgo.Dial(DB_URL)
 	if err != nil {
 		panic(err)
 	}
-	c := session.DB("").C("meter")
+	session.SetMode(mgo.Monotonic, true)
+	return session
+}
+
+func meterCollection() *mgo.Collection {
+	c := MainSession.DB("").C("meter")
 	c.EnsureIndex(mgo.Index{
 		Key:        []string{"m", "t"},
 		Unique:     true,
@@ -71,7 +77,6 @@ type MapReduceValue struct {
 
 func main() {
 	flag.Parse()
-	meterCollection := getCollection()
 	readMeterConfig()
 	readACLConfig()
 	// poll data
@@ -84,7 +89,7 @@ func main() {
 					fmt.Println(err)
 					continue
 				}
-				err = meterCollection.Insert(v)
+				err = meterCollection().Insert(v)
 				if err != nil {
 					fmt.Println(err)
 					continue
@@ -135,7 +140,7 @@ func main() {
 					return value;
 				}`,
 			}
-			meterCollection.Find(nil).MapReduce(job, &results)
+			meterCollection().Find(nil).MapReduce(job, &results)
 			for _, result := range results {
 				for i := range Meters {
 					if result.Id == Meters[i].Name {
@@ -170,7 +175,7 @@ func main() {
 		stop, _ := strconv.ParseInt(params["stop"], 10, 64)
 		step, _ := strconv.ParseInt(params["step"], 10, 64)
 		var results []EatonValue
-		err := meterCollection.Find(bson.M{
+		err := meterCollection().Find(bson.M{
 			"t": bson.M{
 				"$lt":  time.Unix(stop, 0),
 				"$gte": time.Unix(start, 0),
