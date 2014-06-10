@@ -3,39 +3,65 @@ var app = angular.module("telescope", ['angular-loading-bar', 'ngAnimate']);
 app.controller("meterController", function($scope, $http, $timeout) {
     $scope.stats = {};
     $scope.meters = [];
+    $scope.anormalyCounter = 0;
     $scope.na = true;
-    var sync = function() {
+    $scope.activeMeter = "";
+    function sync() {
         console.log("sync");
         $http.get("/list").success(function(data) {
             $scope.meters = data;
             updateStats();
         });
         $timeout(sync, 6e4);
-    };
+    }
     sync();
-    $scope.activeMeter = "";
     $scope.isActiveMeter = function(meter) {
         return meter.name == $scope.activeMeter;
     };
-    function updateStats() {
+    function activeMeterStats() {
         for (var i in $scope.meters) {
             if ($scope.meters[i].name == $scope.activeMeter) {
-                $scope.stats = {
-                    'Avg Power': $scope.meters[i]['Avg'].toFixed(2) + ' W',
-                    'Max Power': $scope.meters[i]['Max'].toFixed(2) + ' W',
-                    'Min Power': $scope.meters[i]['Min'].toFixed(2) + ' W',
-                    'Power Stddev': $scope.meters[i]['Stddev'].toFixed(2) + ' W',
-                    'Energy in last hour': ($scope.meters[i]['Avg'] * 3.6).toFixed(2) + ' kJ',
+                return {
+                     'Avg': $scope.meters[i]['Avg'],
+                     'Max':  $scope.meters[i]['Max'],
+                     'Min':  $scope.meters[i]['Min'],
+                     'Stddev':  $scope.meters[i]['Stddev'],
                 };
             }
         }
+        return null
     }
-    var context = cubism.context().serverDelay(6e4).step(6e4).size(500);
+    function updateStats() {
+        var stats = activeMeterStats();
+        if (stats == null) {
+            $scope.stats = {};
+            return
+        }
+        $scope.stats = {
+            'Avg Power': stats['Avg'].toFixed(2) + ' W',
+            'Max Power': stats['Max'].toFixed(2) + ' W',
+            'Min Power': stats['Min'].toFixed(2) + ' W',
+            'Power Stddev': stats['Stddev'].toFixed(2) + ' W',
+            'Energy in last hour': (stats['Avg'] * 3.6).toFixed(2) + ' kJ',
+        };
+    }
+    $scope.anormalyThresh = function() {
+        var stats = activeMeterStats();
+        if (stats == null || stats['Avg'] == 0) {
+            return Number.MAX_VALUE;
+        }
+        return stats['Avg'] + 3 * stats['Stddev'];
+    };
+    var context = cubism.context().step(6e4).size(500);
     var horizon = context.horizon().height(300).format(d3.format(".2f")).title("Power").colors(["#bdd7e7","#bae4b3"]);
-    var comparison = context.comparison().height(200).formatChange(d3.format(".1f%")).title("Daily Change");
+    var comparison = context.comparison().height(100).formatChange(d3.format(".1f%")).title("Daily Change");
     $scope.setActiveMeter = function(meter) {
+        if (meter.name == $scope.activeMeter) {
+            return
+        }
         console.log(meter);
         $scope.activeMeter = meter.name;
+        $scope.anormalyCounter = 0;
         var primary = energy($scope.activeMeter), secondary = primary.shift(-24 * 60 * 60 * 1e3);
 
         d3.select("#chart").call(function(div) {
@@ -63,9 +89,19 @@ app.controller("meterController", function($scope, $http, $timeout) {
             var req = "/" + meter + "/" + start.getTime() / 1e3 + "/" + stop.getTime() / 1e3 + "/" + step / 1e3;
             $http.get(req).success(function(data) {
                 console.log(meter, "success");
-                if (meter == $scope.activeMeter)
+                if (meter == $scope.activeMeter) {
                     $scope.na = false;
-                callback(null, data);  
+                    var thresh = $scope.anormalyThresh();
+                    var oneDayAgo = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
+                    if (start > oneDayAgo) {
+                        for (var i in data) {
+                            if (data[i] > thresh) {
+                                $scope.anormalyCounter++;
+                            }
+                        }
+                    }
+                }
+                callback(null, data);
             }).error(function(data) {
                 console.log(meter, "error");
                 if (meter == $scope.activeMeter)

@@ -82,10 +82,10 @@ func main() {
 	// get power stat
 	go func() {
 		var results []MapReduceValue
-		every(time.Minute*10, func() {
+		every(time.Hour, func() {
 			job := &mgo.MapReduce{
 				Map: `function() {
-					if (new Date(new Date() - 1000 * 60 * 60) > this.t) {
+					if (new Date(new Date() - 1000 * 60 * 60 * 24) > this.t) {
 						return
 					}
 					var n = Math.abs(this.v[9])

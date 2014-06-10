@@ -75,6 +75,9 @@
             <div class="well" style="margin-top: 40px;" ng-show="na">
                 you don't have access to this meter.
             </div>
+            <div class="alert alert-danger" style="margin-top: 40px;" ng-show="anormalyCounter > 0">
+                {{ anormalyCounter }} abnormal power event(s) (> {{ anormalyThresh() | number: 2 }} W) detected in the past few hours.
+            </div>
             <div id="chart" ng-hide="na"></div>
         </div>
     </div>
