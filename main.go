@@ -50,6 +50,13 @@ type MapReduceValue struct {
 	Value map[string]float64 `bson:"value" json:"value"`
 }
 
+func every(freq time.Duration, task func()) {
+	task()
+	for _ = range time.Tick(freq) {
+		task()
+	}
+}
+
 func main() {
 	flag.Parse()
 	readMeterConfig()
@@ -58,24 +65,24 @@ func main() {
 	for _, meter := range Meters {
 		go func(m Eaton) {
 			fmt.Printf("start meter %v\n", m.Addr)
-			for _ = range time.Tick(time.Minute) {
+			every(time.Minute, func() {
 				v, err := m.Read()
 				if err != nil {
 					fmt.Println(err)
-					continue
+					return
 				}
 				err = meterCollection().Insert(v)
 				if err != nil {
 					fmt.Println(err)
-					continue
+					return
 				}
-			}
+			})
 		}(meter)
 	}
 	// get power stat
 	go func() {
 		var results []MapReduceValue
-		for _ = range time.Tick(time.Minute * 10) {
+		every(time.Minute*10, func() {
 			job := &mgo.MapReduce{
 				Map: `function() {
 					if (new Date(new Date() - 1000 * 60 * 60) > this.t) {
@@ -127,7 +134,7 @@ func main() {
 					}
 				}
 			}
-		}
+		})
 	}()
 
 	// server
