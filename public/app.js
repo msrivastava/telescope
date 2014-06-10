@@ -21,11 +21,11 @@ app.controller("meterController", function($scope, $http, $timeout) {
         for (var i in $scope.meters) {
             if ($scope.meters[i].name == $scope.activeMeter) {
                 $scope.stats = {
-                    'Avg Power': $scope.meters[i]['Avg'] + ' W',
-                    'Max Power': $scope.meters[i]['Max'] + ' W',
-                    'Min Power': $scope.meters[i]['Min'] + ' W',
-                    'Power Stddev': $scope.meters[i]['Stddev'] + ' W',
-                    'Energy in last hour': $scope.meters[i]['Avg'] * 3.6 + ' kJ',
+                    'Avg Power': $scope.meters[i]['Avg'].toFixed(2) + ' W',
+                    'Max Power': $scope.meters[i]['Max'].toFixed(2) + ' W',
+                    'Min Power': $scope.meters[i]['Min'].toFixed(2) + ' W',
+                    'Power Stddev': $scope.meters[i]['Stddev'].toFixed(2) + ' W',
+                    'Energy in last hour': ($scope.meters[i]['Avg'] * 3.6).toFixed(2) + ' kJ',
                 };
             }
         }
