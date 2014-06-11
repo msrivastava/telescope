@@ -54,7 +54,7 @@ app.controller("meterController", function($scope, $http, $timeout) {
     };
     var context = cubism.context().step(6e4).size(500);
     var horizon = context.horizon().height(300).format(d3.format(".2f")).title("Power").colors(["#bdd7e7","#bae4b3"]);
-    var comparison = context.comparison().height(100).formatChange(d3.format(".1f%")).title("Daily Change");
+    var comparison = context.comparison().height(100).formatChange(d3.format(".1f")).title("Daily Change");
     $scope.setActiveMeter = function(meter) {
         if (meter.name == $scope.activeMeter) {
             return
@@ -65,8 +65,8 @@ app.controller("meterController", function($scope, $http, $timeout) {
         var primary = energy($scope.activeMeter), secondary = primary.shift(-24 * 60 * 60 * 1e3);
 
         d3.select("#chart").call(function(div) {
-            div.selectAll(".horizon").selectAll('*').remove();
-            div.selectAll(".comparison").selectAll('*').remove();
+            div.selectAll(".horizon").call(horizon.remove);
+            div.selectAll(".comparison").call(comparison.remove);
             div.selectAll(".horizon").call(horizon.metric(primary));
             div.selectAll(".comparison").call(comparison.primary(primary).secondary(secondary));
         });
