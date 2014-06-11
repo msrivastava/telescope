@@ -70,10 +70,10 @@ app.controller("meterController", function($scope, $http, $timeout) {
             div.selectAll(".horizon").call(horizon.remove).call(horizon.metric(primary));
             div.selectAll(".comparison").call(comparison.remove).call(comparison.primary(primary).secondary(secondary));
         });
-
+        var change = primary.subtract(secondary).divide(secondary);
         context.on("focus", function(i) {
             d3.selectAll(".horizon .value").style("right", i === null ? null : context.size() - i + "px").text(d3.format(".1f")(primary.valueAt(Math.floor(i))) + 'W');
-            d3.selectAll(".comparison .value").style("right", i === null ? null : context.size() - i + "px").text(d3.format(".0f%")(secondary.valueAt(Math.floor(i))) + '%');
+            d3.selectAll(".comparison .value").style("right", i === null ? null : context.size() - i + "px").text(d3.format(".0f%")(change.valueAt(Math.floor(i))) + '%');
         });
         updateStats();
     };
