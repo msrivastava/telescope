@@ -73,7 +73,7 @@ app.controller("meterController", function($scope, $http, $timeout) {
         var change = primary.subtract(secondary);
         context.on("focus", function(i) {
             d3.selectAll(".horizon .value").style("right", i === null ? null : context.size() - i + "px").text(d3.format(".1f")(primary.valueAt(Math.floor(i))) + 'W');
-            d3.selectAll(".comparison .value").style("right", i === null ? null : context.size() - i + "px").text(d3.format(".1f%")(change.valueAt(Math.floor(i))) + 'W');
+            d3.selectAll(".comparison .value").style("right", i === null ? null : context.size() - i + "px").text(d3.format(".1f")(change.valueAt(Math.floor(i))) + 'W');
         });
         updateStats();
     };
