@@ -65,10 +65,8 @@ app.controller("meterController", function($scope, $http, $timeout) {
         var primary = energy($scope.activeMeter), secondary = primary.shift(-24 * 60 * 60 * 1e3);
 
         d3.select("#chart").call(function(div) {
-            div.selectAll(".horizon").call(horizon.remove);
-            div.selectAll(".comparison").call(comparison.remove);
-            div.selectAll(".horizon").call(horizon.metric(primary));
-            div.selectAll(".comparison").call(comparison.primary(primary).secondary(secondary));
+            div.selectAll(".horizon").call(horizon.remove).call(horizon.metric(primary));
+            div.selectAll(".comparison").call(comparison.remove).call(comparison.primary(primary).secondary(secondary));
         });
 
         context.on("focus", function(i) {
