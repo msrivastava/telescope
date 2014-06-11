@@ -4,6 +4,7 @@ app.controller("meterController", function($scope, $http, $timeout) {
     $scope.stats = {};
     $scope.meters = [];
     $scope.anormalyCounter = 0;
+    $scope.lastTimestamp = null;
     $scope.na = true;
     $scope.activeMeter = "";
     function sync() {
@@ -62,7 +63,8 @@ app.controller("meterController", function($scope, $http, $timeout) {
         console.log(meter);
         $scope.activeMeter = meter.name;
         $scope.anormalyCounter = 0;
-        var primary = energy($scope.activeMeter), secondary = primary.shift(-24 * 60 * 60 * 1e3);
+        $scope.lastTimestamp = null;
+        var primary = energy($scope.activeMeter, true), secondary = energy($scope.activeMeter, false).shift(-24 * 60 * 60 * 1e3);
 
         d3.select("#chart").call(function(div) {
             div.selectAll(".horizon").call(horizon.remove).call(horizon.metric(primary));
@@ -82,28 +84,25 @@ app.controller("meterController", function($scope, $http, $timeout) {
         div.append("div").attr("class", "horizon");
         div.append("div").attr("class", "comparison");
     });
-    function energy(meter) {
+    function energy(meter, now) {
         return context.metric(function(start, stop, step, callback) {
             var req = "/" + meter + "/" + start.getTime() / 1e3 + "/" + stop.getTime() / 1e3 + "/" + step / 1e3;
             $http.get(req).success(function(data) {
                 console.log(meter, "success");
-                if (meter == $scope.activeMeter) {
-                    $scope.na = false;
+                $scope.na = false;
+                if (now && ($scope.lastTimestamp == null || stop > $scope.lastTimestamp)) {
                     var thresh = $scope.anormalyThresh();
-                    var oneDayAgo = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
-                    if (start > oneDayAgo) {
-                        for (var i in data) {
-                            if (data[i] > thresh) {
-                                $scope.anormalyCounter++;
-                            }
+                    for (var i in data) {
+                        if (data[i] > thresh) {
+                            $scope.anormalyCounter++;
                         }
                     }
+                    $scope.lastTimestamp = stop;
                 }
                 callback(null, data);
             }).error(function(data) {
                 console.log(meter, "error");
-                if (meter == $scope.activeMeter)
-                    $scope.na = true;
+                $scope.na = true;
                 callback(new Error("unable to load data"));
             });
         });
