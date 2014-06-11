@@ -55,7 +55,7 @@ app.controller("meterController", function($scope, $http, $timeout) {
     };
     var context = cubism.context().step(6e4).size(500);
     var horizon = context.horizon().height(300).format(d3.format(".1f")).title("Power (W)").colors(["#bdd7e7","#bae4b3"]);
-    var comparison = context.comparison().height(100).formatChange(d3.format(".0f%")).title("Daily Change (%)");
+    var comparison = context.comparison().height(100).formatChange(d3.format(".1f")).title("Daily Change (W)");
     $scope.setActiveMeter = function(meter) {
         if (meter.name == $scope.activeMeter) {
             return
@@ -70,10 +70,10 @@ app.controller("meterController", function($scope, $http, $timeout) {
             div.selectAll(".horizon").call(horizon.remove).call(horizon.metric(primary));
             div.selectAll(".comparison").call(comparison.remove).call(comparison.primary(primary).secondary(secondary));
         });
-        var change = primary.subtract(secondary).divide(secondary);
+        var change = primary.subtract(secondary);
         context.on("focus", function(i) {
             d3.selectAll(".horizon .value").style("right", i === null ? null : context.size() - i + "px").text(d3.format(".1f")(primary.valueAt(Math.floor(i))) + 'W');
-            d3.selectAll(".comparison .value").style("right", i === null ? null : context.size() - i + "px").text(d3.format(".0f%")(change.valueAt(Math.floor(i))) + '%');
+            d3.selectAll(".comparison .value").style("right", i === null ? null : context.size() - i + "px").text(d3.format(".1f%")(change.valueAt(Math.floor(i))) + 'W');
         });
         updateStats();
     };
