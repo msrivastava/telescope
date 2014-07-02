@@ -216,10 +216,7 @@ func resample(start, stop, step int64, data []EatonValue) (values []float64) {
 		}
 		t := data[j].Time().Unix()
 		if i <= t && t < i+step {
-			read := data[j].Power()
-			if read != 0 {
-				v = read
-			}
+			v = data[j].Power()
 		}
 		values = append(values, v)
 	}
