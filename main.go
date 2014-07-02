@@ -57,6 +57,68 @@ func every(freq time.Duration, task func()) {
 	}
 }
 
+func deleteOldMeterValue() {
+	meterCollection().RemoveAll(bson.M{
+		"t": bson.M{"$lt": time.Now().Add(-7 * 24 * time.Hour)},
+	})
+}
+
+func computeStats() {
+	var results []MapReduceValue
+	job := &mgo.MapReduce{
+		Map: `function() {
+					if (new Date(new Date() - 1000 * 60 * 60 * 24) > this.t) {
+						return
+					}
+					var n = Math.abs(this.v[9])
+					emit(this.m, // Or put a GROUP BY key here
+					{
+					 	sum: n, // the field you want stats for
+						min: n,
+						max: n,
+						count:1,
+						diff: 0,
+					});
+				}`,
+		Reduce: `function(key, values) {
+					var a = values[0]; // will reduce into here
+					for (var i=1; i < values.length; i++){
+						var b = values[i]; // will merge 'b' into 'a'
+						// temp helpers
+						var delta = a.sum/a.count - b.sum/b.count; // a.mean - b.mean
+						var weight = (a.count * b.count)/(a.count + b.count);
+						
+						// do the reducing
+						a.diff += b.diff + delta*delta*weight;
+						a.sum += b.sum;
+						a.count += b.count;
+						a.min = Math.min(a.min, b.min);
+						a.max = Math.max(a.max, b.max);
+					}
+					return a;
+				}`,
+		Finalize: `function(key, value) { 
+					value.avg = value.sum / value.count;
+					value.variance = value.diff / value.count;
+					value.stddev = Math.sqrt(value.variance);
+					return value;
+				}`,
+	}
+	meterCollection().Find(nil).MapReduce(job, &results)
+	for _, result := range results {
+		for i := range Meters {
+			if result.Id == Meters[i].Name {
+				Meters[i].Avg = result.Value["avg"]
+				Meters[i].Max = result.Value["max"]
+				Meters[i].Min = result.Value["min"]
+				Meters[i].Stddev = result.Value["stddev"]
+				break
+			}
+		}
+	}
+
+}
+
 func main() {
 	flag.Parse()
 	readMeterConfig()
@@ -81,59 +143,9 @@ func main() {
 	}
 	// get power stat
 	go func() {
-		var results []MapReduceValue
 		every(time.Hour, func() {
-			job := &mgo.MapReduce{
-				Map: `function() {
-					if (new Date(new Date() - 1000 * 60 * 60 * 24) > this.t) {
-						return
-					}
-					var n = Math.abs(this.v[9])
-					emit(this.m, // Or put a GROUP BY key here
-					{
-					 	sum: n, // the field you want stats for
-						min: n,
-						max: n,
-						count:1,
-						diff: 0,
-					});
-				}`,
-				Reduce: `function(key, values) {
-					var a = values[0]; // will reduce into here
-					for (var i=1; i < values.length; i++){
-						var b = values[i]; // will merge 'b' into 'a'
-						// temp helpers
-						var delta = a.sum/a.count - b.sum/b.count; // a.mean - b.mean
-						var weight = (a.count * b.count)/(a.count + b.count);
-						
-						// do the reducing
-						a.diff += b.diff + delta*delta*weight;
-						a.sum += b.sum;
-						a.count += b.count;
-						a.min = Math.min(a.min, b.min);
-						a.max = Math.max(a.max, b.max);
-					}
-					return a;
-				}`,
-				Finalize: `function(key, value) { 
-					value.avg = value.sum / value.count;
-					value.variance = value.diff / value.count;
-					value.stddev = Math.sqrt(value.variance);
-					return value;
-				}`,
-			}
-			meterCollection().Find(nil).MapReduce(job, &results)
-			for _, result := range results {
-				for i := range Meters {
-					if result.Id == Meters[i].Name {
-						Meters[i].Avg = result.Value["avg"]
-						Meters[i].Max = result.Value["max"]
-						Meters[i].Min = result.Value["min"]
-						Meters[i].Stddev = result.Value["stddev"]
-						break
-					}
-				}
-			}
+			computeStats()
+			deleteOldMeterValue()
 		})
 	}()
 
@@ -168,6 +180,7 @@ func main() {
 			"v": bson.M{"$slice": []int{9, 1}},
 		}).Sort("t").All(&results)
 		if err != nil {
+			fmt.Println(err)
 			r.JSON(http.StatusBadRequest, nil)
 			return
 		}
